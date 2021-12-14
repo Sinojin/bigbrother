@@ -12,6 +12,33 @@ import (
 var InvalidWatcher = errors.New("Please Provide watcher")
 var AlreadyWatcherStarted = errors.New("Watcher already started")
 
+type OP int
+
+const (
+	Created OP = iota
+	Removed
+	Renamed
+	Modified
+)
+
+func (p OP) Same(SecondOP OP) bool {
+	return p == SecondOP
+}
+
+func (p OP) String() string {
+	switch p {
+	case Created:
+		return "Created"
+	case Removed:
+		return "Removed"
+	case Renamed:
+		return "Renamed"
+	case Modified:
+		return "Modified"
+	}
+	return "Unknown"
+}
+
 type Command interface {
 	ID() string // unique identifier for this command
 	Command(info FileInfo)
@@ -48,9 +75,9 @@ func (w *Watcher) AddPath(path string) error {
 			return err
 		}
 	}
-
 	return nil
 }
+
 func FilePathWalkDir(root string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
@@ -70,8 +97,9 @@ func (w *Watcher) Start() error {
 	if err != nil {
 		return err
 	}
+	//todo first check all files in database and then decide they are modified or not
 	w.watcher = watcher
-
+	go w.start()
 	return nil
 }
 
@@ -83,6 +111,7 @@ func (w *Watcher) start() {
 			if !ok {
 				return
 			}
+			//todo:understand file action
 			if event.Op&fsnotify.Write == fsnotify.Write {
 
 			}
